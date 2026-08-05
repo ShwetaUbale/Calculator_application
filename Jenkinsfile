@@ -15,17 +15,10 @@ pipeline {
                                 exit 1
                             fi
 
-                            # Check if venv works; if not, try installing python3-venv/pip via apt
-                            if ! "$PYTHON" -m venv .venv >/dev/null 2>&1; then
-                                echo "venv module missing or broken. Attempting apt install..."
-                                (apt-get update && apt-get install -y python3-venv python3-pip) || \
-                                (sudo apt-get update && sudo apt-get install -y python3-venv python3-pip)
-                            fi
-
                             # Create virtual environment
                             "$PYTHON" -m venv .venv
 
-                            # Upgrade pip and install dependencies
+                            # Upgrade pip and install required packages inside .venv
                             .venv/bin/python -m pip install --upgrade pip
                             .venv/bin/python -m pip install -r requirements.txt
                         '''
