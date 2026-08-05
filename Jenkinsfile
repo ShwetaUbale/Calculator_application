@@ -15,19 +15,12 @@ pipeline {
                                 exit 1
                             fi
 
-                            if ! "$PYTHON" -m pip --version >/dev/null 2>&1; then
-                                TMPFILE=$(mktemp /tmp/get-pip.XXXXXX.py)
-                                cat > "$TMPFILE" <<'PY'
-import urllib.request, pathlib, sys
-url = 'https://bootstrap.pypa.io/get-pip.py'
-path = pathlib.Path(sys.argv[1])
-path.write_bytes(urllib.request.urlopen(url).read())
-PY
-                                "$PYTHON" "$TMPFILE" --user
-                            fi
+                            # Ensure venv is created
+                            "$PYTHON" -m venv .venv || { echo "venv module missing. Install python3-venv on agent."; exit 1; }
 
-                            "$PYTHON" -m pip install --user --upgrade pip
-                            "$PYTHON" -m pip install --user -r requirements.txt
+                            # Upgrade pip and install dependencies inside virtual environment
+                            .venv/bin/python -m pip install --upgrade pip
+                            .venv/bin/python -m pip install -r requirements.txt
                         '''
                     } else {
                         bat 'python -m venv .venv'
@@ -42,14 +35,7 @@ PY
             steps {
                 script {
                     if (isUnix()) {
-                        sh '''
-                            PYTHON=$(command -v python3 || command -v python || true)
-                            if [ -z "$PYTHON" ]; then
-                                echo "No Python executable found"
-                                exit 1
-                            fi
-                            "$PYTHON" -m coverage run -m pytest --junitxml=pytest-results.xml
-                        '''
+                        sh '.venv/bin/python -m coverage run -m pytest --junitxml=pytest-results.xml'
                     } else {
                         bat '.venv\\Scripts\\python.exe -m coverage run -m pytest --junitxml=pytest-results.xml'
                     }
@@ -61,14 +47,7 @@ PY
             steps {
                 script {
                     if (isUnix()) {
-                        sh '''
-                            PYTHON=$(command -v python3 || command -v python || true)
-                            if [ -z "$PYTHON" ]; then
-                                echo "No Python executable found"
-                                exit 1
-                            fi
-                            "$PYTHON" -m coverage xml
-                        '''
+                        sh '.venv/bin/python -m coverage xml'
                     } else {
                         bat '.venv\\Scripts\\python.exe -m coverage xml'
                     }
@@ -80,14 +59,7 @@ PY
             steps {
                 script {
                     if (isUnix()) {
-                        sh '''
-                            PYTHON=$(command -v python3 || command -v python || true)
-                            if [ -z "$PYTHON" ]; then
-                                echo "No Python executable found"
-                                exit 1
-                            fi
-                            "$PYTHON" -m flake8 .
-                        '''
+                        sh '.venv/bin/python -m flake8 .'
                     } else {
                         bat '.venv\\Scripts\\python.exe -m flake8 .'
                     }
