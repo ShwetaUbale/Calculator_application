@@ -8,12 +8,9 @@ pipeline {
                     if (isUnix()) {
                         sh '''
                             set -e
-                            PYTHON=python3
-                            if ! command -v "$PYTHON" >/dev/null 2>&1; then
-                                PYTHON=python
-                            fi
+                            PYTHON=$(command -v python3 || command -v python || true)
 
-                            if [ ! -x "$PYTHON" ]; then
+                            if [ -z "$PYTHON" ]; then
                                 echo "No Python executable found"
                                 exit 1
                             fi
