@@ -1,35 +1,41 @@
 pipeline {
     agent any
 
-    stages {
-        stage('Install dependencies') {
-            steps {
-                script {
-                    if (isUnix()) {
-                        sh '''
-                            set -e
-                            PYTHON=$(command -v python3 || command -v python || true)
+    stage('Install dependencies') {
+    steps {
+        script {
+            if (isUnix()) {
+                sh '''
+                    set -e
+                    PYTHON=$(command -v python3 || command -v python || true)
 
-                            if [ -z "$PYTHON" ]; then
-                                echo "No Python executable found"
-                                exit 1
-                            fi
+                    if [ -z "$PYTHON" ]; then
+                        echo "No Python executable found"
+                        exit 1
+                    fi
 
-                            # Create virtual environment if it doesn't exist
-                            "$PYTHON" -m venv .venv
+                    # Check if venv works; if not, try installing python3-venv/pip via apt
+                    if ! "$PYTHON" -m venv .venv >/dev/null 2>&1; then
+                        echo "venv module missing or broken. Attempting apt install..."
+                        (apt-get update && apt-get install -y python3-venv python3-pip) || \
+                        (sudo apt-get update && sudo apt-get install -y python3-venv python3-pip)
+                    fi
 
-                            # Install requirements inside .venv
-                            .venv/bin/python -m pip install --upgrade pip
-                            .venv/bin/python -m pip install -r requirements.txt
-                        '''
-                    } else {
-                        bat 'python -m venv .venv'
-                        bat '.venv\\Scripts\\python.exe -m pip install --upgrade pip'
-                        bat '.venv\\Scripts\\python.exe -m pip install -r requirements.txt'
-                    }
-                }
+                    # Create virtual environment
+                    "$PYTHON" -m venv .venv
+
+                    # Upgrade pip and install dependencies
+                    .venv/bin/python -m pip install --upgrade pip
+                    .venv/bin/python -m pip install -r requirements.txt
+                '''
+            } else {
+                bat 'python -m venv .venv'
+                bat '.venv\\Scripts\\python.exe -m pip install --upgrade pip'
+                bat '.venv\\Scripts\\python.exe -m pip install -r requirements.txt'
             }
         }
+    }
+}
 
         stage('Run application') {
             steps {
