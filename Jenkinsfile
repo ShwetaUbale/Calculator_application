@@ -6,15 +6,30 @@ pipeline {
             steps {
                 script {
                     if (isUnix()) {
-                        // Ensure pip is installed first, then install requirements
                         sh '''
-                            python3 -m ensurepip --upgrade || sudo apt-get update && sudo apt-get install -y python3-pip
-                            python3 -m pip install --upgrade pip
-                            python3 -m pip install -r requirements.txt
+                            PYTHON=python3
+                            if ! command -v "$PYTHON" >/dev/null 2>&1; then
+                                PYTHON=python
+                            fi
+
+                            if ! "$PYTHON" -m pip --version >/dev/null 2>&1; then
+                                "$PYTHON" - <<'PY'
+import urllib.request, tempfile, pathlib, sys, os
+url = 'https://bootstrap.pypa.io/get-pip.py'
+tmp = pathlib.Path(tempfile.gettempdir()) / 'get-pip.py'
+with urllib.request.urlopen(url) as r:
+    tmp.write_bytes(r.read())
+os.execv(sys.executable, [sys.executable, str(tmp), '--quiet'])
+PY
+                            fi
+
+                            "$PYTHON" -m pip install --upgrade pip
+                            "$PYTHON" -m pip install --user -r requirements.txt
                         '''
                     } else {
+                        bat 'python -m pip --version || python -m ensurepip --upgrade'
                         bat 'python -m pip install --upgrade pip'
-                        bat 'python -m pip install -r requirements.txt'
+                        bat 'python -m pip install --user -r requirements.txt'
                     }
                 }
             }
