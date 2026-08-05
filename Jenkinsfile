@@ -71,9 +71,9 @@ pipeline {
             steps {
                 script {
                     if (isUnix()) {
-                        sh '.venv/bin/python -m flake8 .'
+                        sh '.venv/bin/python -m flake8 . --exclude=.venv'
                     } else {
-                        bat '.venv\\Scripts\\python.exe -m flake8 .'
+                        bat '.venv\\Scripts\\python.exe -m flake8 . --exclude=.venv'
                     }
                 }
             }
