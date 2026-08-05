@@ -15,10 +15,8 @@ pipeline {
                                 exit 1
                             fi
 
-                            "$PYTHON" -m venv .venv
-                            . .venv/bin/activate
-                            pip install --upgrade pip
-                            pip install -r requirements.txt
+                            "$PYTHON" -m pip install --user --upgrade pip
+                            "$PYTHON" -m pip install --user -r requirements.txt
                         '''
                     } else {
                         bat 'python -m venv .venv'
@@ -33,7 +31,14 @@ pipeline {
             steps {
                 script {
                     if (isUnix()) {
-                        sh '.venv/bin/python -m coverage run -m pytest --junitxml=pytest-results.xml'
+                        sh '''
+                            PYTHON=$(command -v python3 || command -v python || true)
+                            if [ -z "$PYTHON" ]; then
+                                echo "No Python executable found"
+                                exit 1
+                            fi
+                            "$PYTHON" -m coverage run -m pytest --junitxml=pytest-results.xml
+                        '''
                     } else {
                         bat '.venv\\Scripts\\python.exe -m coverage run -m pytest --junitxml=pytest-results.xml'
                     }
@@ -45,9 +50,16 @@ pipeline {
             steps {
                 script {
                     if (isUnix()) {
-                        sh 'python3 -m coverage xml'
+                        sh '''
+                            PYTHON=$(command -v python3 || command -v python || true)
+                            if [ -z "$PYTHON" ]; then
+                                echo "No Python executable found"
+                                exit 1
+                            fi
+                            "$PYTHON" -m coverage xml
+                        '''
                     } else {
-                        bat 'python -m coverage xml'
+                        bat '.venv\\Scripts\\python.exe -m coverage xml'
                     }
                 }
             }
@@ -57,9 +69,16 @@ pipeline {
             steps {
                 script {
                     if (isUnix()) {
-                        sh 'flake8 .'
+                        sh '''
+                            PYTHON=$(command -v python3 || command -v python || true)
+                            if [ -z "$PYTHON" ]; then
+                                echo "No Python executable found"
+                                exit 1
+                            fi
+                            "$PYTHON" -m flake8 .
+                        '''
                     } else {
-                        bat 'flake8 .'
+                        bat '.venv\\Scripts\\python.exe -m flake8 .'
                     }
                 }
             }
