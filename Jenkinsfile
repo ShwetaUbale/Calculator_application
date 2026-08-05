@@ -15,6 +15,18 @@ pipeline {
                                 exit 1
                             fi
 
+                            if ! "$PYTHON" -m pip --version >/dev/null 2>&1; then
+                                TMPFILE=$(mktemp /tmp/get-pip.XXXXXX.py)
+                                "$PYTHON" - <<'PY'
+import urllib.request, pathlib, sys
+url = 'https://bootstrap.pypa.io/get-pip.py'
+path = pathlib.Path(sys.argv[1])
+path.write_bytes(urllib.request.urlopen(url).read())
+PY
+ "$TMPFILE"
+                                "$PYTHON" "$TMPFILE" --user
+                            fi
+
                             "$PYTHON" -m pip install --user --upgrade pip
                             "$PYTHON" -m pip install --user -r requirements.txt
                         '''
