@@ -7,29 +7,26 @@ pipeline {
                 script {
                     if (isUnix()) {
                         sh '''
+                            set -e
                             PYTHON=python3
                             if ! command -v "$PYTHON" >/dev/null 2>&1; then
                                 PYTHON=python
                             fi
 
-                            if ! "$PYTHON" -m pip --version >/dev/null 2>&1; then
-                                "$PYTHON" - <<'PY'
-import urllib.request, tempfile, pathlib, sys, os
-url = 'https://bootstrap.pypa.io/get-pip.py'
-tmp = pathlib.Path(tempfile.gettempdir()) / 'get-pip.py'
-with urllib.request.urlopen(url) as r:
-    tmp.write_bytes(r.read())
-os.execv(sys.executable, [sys.executable, str(tmp), '--quiet'])
-PY
+                            if [ ! -x "$PYTHON" ]; then
+                                echo "No Python executable found"
+                                exit 1
                             fi
 
-                            "$PYTHON" -m pip install --upgrade pip
-                            "$PYTHON" -m pip install --user -r requirements.txt
+                            "$PYTHON" -m venv .venv
+                            . .venv/bin/activate
+                            pip install --upgrade pip
+                            pip install -r requirements.txt
                         '''
                     } else {
-                        bat 'python -m pip --version || python -m ensurepip --upgrade'
-                        bat 'python -m pip install --upgrade pip'
-                        bat 'python -m pip install --user -r requirements.txt'
+                        bat 'python -m venv .venv'
+                        bat '.venv\\Scripts\\python.exe -m pip install --upgrade pip'
+                        bat '.venv\\Scripts\\python.exe -m pip install -r requirements.txt'
                     }
                 }
             }
@@ -39,9 +36,9 @@ PY
             steps {
                 script {
                     if (isUnix()) {
-                        sh 'python3 -m coverage run -m pytest --junitxml=pytest-results.xml'
+                        sh '.venv/bin/python -m coverage run -m pytest --junitxml=pytest-results.xml'
                     } else {
-                        bat 'python -m coverage run -m pytest --junitxml=pytest-results.xml'
+                        bat '.venv\\Scripts\\python.exe -m coverage run -m pytest --junitxml=pytest-results.xml'
                     }
                 }
             }
