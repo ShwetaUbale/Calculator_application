@@ -1,23 +1,24 @@
 pipeline {
     agent any
 
-    stage('Install dependencies') {
-    steps {
-        script {
-            if (isUnix()) {
-                // Ensure pip is installed first, then install requirements
-                sh '''
-                    python3 -m ensurepip --upgrade || sudo apt-get update && sudo apt-get install -y python3-pip
-                    python3 -m pip install --upgrade pip
-                    python3 -m pip install -r requirements.txt
-                '''
-            } else {
-                bat 'python -m pip install --upgrade pip'
-                bat 'python -m pip install -r requirements.txt'
+    stages {
+        stage('Install dependencies') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        // Ensure pip is installed first, then install requirements
+                        sh '''
+                            python3 -m ensurepip --upgrade || sudo apt-get update && sudo apt-get install -y python3-pip
+                            python3 -m pip install --upgrade pip
+                            python3 -m pip install -r requirements.txt
+                        '''
+                    } else {
+                        bat 'python -m pip install --upgrade pip'
+                        bat 'python -m pip install -r requirements.txt'
+                    }
+                }
             }
         }
-    }
-}
 
         stage('Run tests') {
             steps {
